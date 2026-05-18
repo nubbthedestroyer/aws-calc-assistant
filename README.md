@@ -16,10 +16,10 @@ A Claude Code plugin for building shareable [AWS Pricing Calculator](https://cal
 
 This repo includes a pre-built Kiro agent and skill. After cloning:
 
-1. Install server dependencies:
+1. Build the Docker image:
 
 ```bash
-cd server && npm install
+docker build -t aws-calculator-mcp .
 ```
 
 2. Open the project in Kiro. The `.kiro/settings/mcp.json` registers the MCP server automatically, and `.kiro/agents/aws-calculator.json` provides a ready-to-use agent.

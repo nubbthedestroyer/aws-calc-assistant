@@ -8,8 +8,8 @@
   ],
   "mcpServers": {
     "aws-calculator": {
-      "command": "node",
-      "args": ["${workspaceFolder}/server/index.js"]
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "aws-calculator-mcp"]
     }
   },
   "welcomeMessage": "Ready to build AWS Pricing Calculator estimates. Ask me to create an estimate or describe your architecture."

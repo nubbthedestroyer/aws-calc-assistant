@@ -8,19 +8,19 @@ author: "SoftServe"
 
 # Onboarding
 
-## Step 1: Install server dependencies
-The AWS Calculator power requires a local Node.js MCP server.
+## Step 1: Build the Docker image
+The AWS Calculator power runs as a Docker container — no Node.js installation required.
 
 ```bash
-cd server && npm install
+docker build -t aws-calculator-mcp .
 ```
 
-Verify Node.js is available:
+Verify Docker is available:
 ```bash
-node --version
+docker --version
 ```
 
-If Node.js is not installed, install it from https://nodejs.org before proceeding.
+If Docker is not installed, install Docker Desktop from https://www.docker.com/products/docker-desktop before proceeding.
 
 ## Step 2: Confirm MCP tools are available
 After installation, the following MCP tools should be available via the `aws-calculator` server:
