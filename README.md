@@ -14,6 +14,14 @@ A Claude Code plugin for building shareable [AWS Pricing Calculator](https://cal
 
 The MCP server can run via Docker (recommended — no Node.js required) or directly with Node.js.
 
+### Windows
+
+Run the setup script — it auto-detects Docker or Node.js and configures Kiro automatically:
+
+```powershell
+.\setup.ps1
+```
+
 ### Option 1: Docker (recommended)
 
 ```bash

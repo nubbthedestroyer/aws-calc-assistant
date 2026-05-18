@@ -10,18 +10,19 @@ author: "SoftServe"
 
 ## Step 1: Start the MCP server
 
-**Option A — Docker (recommended, no Node.js required):**
+**Windows — run the setup script (auto-detects Docker or Node.js):**
+
+```powershell
+.\setup.ps1
+```
+
+**macOS/Linux — Option A: Docker (recommended):**
 
 ```bash
 docker build -t aws-calculator-mcp .
 ```
 
-Verify Docker is available first:
-```bash
-docker --version
-```
-
-**Option B — Node.js (if Docker is unavailable):**
+**macOS/Linux — Option B: Node.js (if Docker is unavailable):**
 
 ```bash
 cd server && npm install
