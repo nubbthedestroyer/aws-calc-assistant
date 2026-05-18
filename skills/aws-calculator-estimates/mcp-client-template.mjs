@@ -72,7 +72,12 @@ export function createMCPClient(serverPath) {
     return (result.content || []).filter((c) => c.type === 'text').map((c) => c.text).join('\n');
   }
 
-  function close() { proc.kill(); }
+  function close() {
+    proc.stdin.destroy();
+    proc.stdout.destroy();
+    proc.kill();
+    process.exit(0);
+  }
   return { init, callTool, close };
 }
 
