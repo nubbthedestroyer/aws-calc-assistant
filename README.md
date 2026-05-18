@@ -10,6 +10,23 @@ A Multi-Agent compatible plugin for building shareable [AWS Pricing Calculator](
 - Supports grouped/nested service organization (e.g., Production, DR, Dev)
 - Loads and inspects existing estimates
 
+## Quick Start
+
+The fastest way to use this tool is to point your AI agent directly at this repo and describe what you need:
+
+1. Clone the repo and open it in Kiro (or add the MCP server to Claude Code — see Installation below)
+2. Give your agent context and ask it to build the estimate:
+
+```
+Use this repo to build an AWS MAP estimate. Here are the customer's call notes and
+infrastructure details: [paste notes, discovery questionnaire, architecture diagram, etc.]
+```
+
+The agent will set up the MCP server, search for the right AWS services, configure pricing,
+and return a shareable calculator.aws link — no manual setup required.
+
+---
+
 ## Installation
 
 The MCP server can run via Docker (recommended — no Node.js required) or directly with Node.js.
