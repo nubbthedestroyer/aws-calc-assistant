@@ -1,0 +1,16 @@
+{
+  "name": "aws-calculator",
+  "description": "Build shareable AWS Pricing Calculator estimates with grouped services and real-time pricing",
+  "tools": ["fs_read", "fs_write", "execute_bash", "grep", "glob", "code", "use_aws"],
+  "allowedTools": ["@aws-calculator"],
+  "resources": [
+    "skill://skills/aws-calculator-estimates/SKILL.md"
+  ],
+  "mcpServers": {
+    "aws-calculator": {
+      "command": "node",
+      "args": ["${workspaceFolder}/server/index.js"]
+    }
+  },
+  "welcomeMessage": "Ready to build AWS Pricing Calculator estimates. Ask me to create an estimate or describe your architecture."
+}

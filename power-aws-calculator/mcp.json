@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "aws-calculator": {
+      "command": "node",
+      "args": ["${workspaceFolder}/server/index.js"]
+    }
+  }
+}
