@@ -1,6 +1,6 @@
 # AWS Calculator Assistant
 
-A Claude Code plugin for building shareable [AWS Pricing Calculator](https://calculator.aws/) estimates programmatically.
+A Multi-Agent compatible plugin for building shareable [AWS Pricing Calculator](https://calculator.aws/) estimates programmatically.
 
 ## What it does
 
@@ -104,10 +104,91 @@ Once published to a GitHub repo, users can install with:
 
 ## Usage
 
-### Slash command
+### Slash command (Claude Code)
 
 ```
 /aws-calc-assistant:estimate 3 m6i.4xlarge EC2 instances with 500GB gp3 in us-east-1
+```
+
+### Example queries
+
+**Build a MAP estimate for a 3-tier web app:**
+```
+Create an AWS MAP estimate for Acme Corp with:
+- Production: 4x m6i.2xlarge EC2 (Linux), RDS PostgreSQL db.r6g.2xlarge Multi-AZ 500GB
+- DR: 2x m6i.2xlarge EC2, RDS PostgreSQL db.r6g.large 500GB
+- Shared Services: CloudWatch, WAF
+Region: us-east-1
+```
+
+**Look up a service:**
+```
+Search for RDS services
+```
+
+**Load an existing estimate:**
+```
+Load estimate https://calculator.aws/#/estimate?id=abc123
+```
+
+### Example tool outputs
+
+**search_services("RDS")**
+```
+Found 8 service(s) matching "RDS":
+
+  Amazon RDS for MySQL                          serviceCode: amazonRDSMySQL
+  Amazon RDS for PostgreSQL                     serviceCode: amazonRDSPostgreSQLDB
+  Amazon RDS for SQL Server                     serviceCode: amazonRDSForSQLServer
+  Amazon RDS for Oracle                         serviceCode: amazonRDSForOracle
+  ...
+
+Use serviceCode with get_service_schema or configure_service.
+```
+
+**configure_service("eC2Next", { instanceType: "m6i.2xlarge", quantity: 4, ... })**
+```json
+{
+  "serviceName": "Amazon EC2",
+  "serviceCode": "eC2Next",
+  "region": "us-east-1",
+  "monthlyCost": 560.64,
+  "upfrontCost": 0,
+  "annualCost": 6727.68,
+  "summary": "Amazon EC2 in US East (N. Virginia): $560.64/mo | $6,727.68/yr",
+  "templateId": "quickEstimate",
+  "calculationComponents": { ... }
+}
+```
+
+**create_estimate(...)**
+```
+Estimate "Acme Corp - AWS MAP Estimate - 2026-06" saved.
+Link: https://calculator.aws/#/estimate?id=5ec6ae5fb817...
+Monthly: $2,847.50 | Upfront: $0.00 | 12-month: $34,170.00
+Services: 6
+
+Groups:
+  Production ($1,842.30/mo)
+  Disaster Recovery ($805.20/mo)
+  Shared Services ($200.00/mo)
+```
+
+**load_estimate("https://calculator.aws/#/estimate?id=...")**
+```
+Estimate: Acme Corp - AWS MAP Estimate - 2026-06
+Monthly: $2,847.50 | Annual: $34,170.00 | Upfront: $0.00
+Created: 2026-06-01T14:23:11.000Z
+
+Groups:
+  Production: $1,842.30/mo
+    - Amazon EC2 (us-east-1): $560.64/mo
+    - Amazon RDS for PostgreSQL (us-east-1): $1,281.66/mo
+  Disaster Recovery: $805.20/mo
+    - Amazon EC2 (us-east-1): $280.32/mo
+    - Amazon RDS for PostgreSQL (us-east-1): $524.88/mo
+  Shared Services: $200.00/mo
+    - Amazon CloudWatch (us-east-1): $200.00/mo
 ```
 
 ### Via MCP tools
