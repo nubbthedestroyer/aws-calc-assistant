@@ -8,19 +8,36 @@ author: "SoftServe"
 
 # Onboarding
 
-## Step 1: Build the Docker image
-The AWS Calculator power runs as a Docker container — no Node.js installation required.
+## Step 1: Start the MCP server
+
+**Option A — Docker (recommended, no Node.js required):**
 
 ```bash
 docker build -t aws-calculator-mcp .
 ```
 
-Verify Docker is available:
+Verify Docker is available first:
 ```bash
 docker --version
 ```
 
-If Docker is not installed, install Docker Desktop from https://www.docker.com/products/docker-desktop before proceeding.
+**Option B — Node.js (if Docker is unavailable):**
+
+```bash
+cd server && npm install
+```
+
+Then edit `.kiro/settings/mcp.json` and replace the `docker` command with:
+```json
+{
+  "mcpServers": {
+    "aws-calculator": {
+      "command": "node",
+      "args": ["${workspaceFolder}/server/index.js"]
+    }
+  }
+}
+```
 
 ## Step 2: Confirm MCP tools are available
 After installation, the following MCP tools should be available via the `aws-calculator` server:

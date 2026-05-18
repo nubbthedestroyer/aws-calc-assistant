@@ -12,44 +12,33 @@ A Claude Code plugin for building shareable [AWS Pricing Calculator](https://cal
 
 ## Installation
 
-### Kiro
+The MCP server can run via Docker (recommended — no Node.js required) or directly with Node.js.
 
-This repo includes a pre-built Kiro agent and skill. After cloning:
-
-1. Build the Docker image:
+### Option 1: Docker (recommended)
 
 ```bash
 docker build -t aws-calculator-mcp .
 ```
 
-2. Open the project in Kiro. The `.kiro/settings/mcp.json` registers the MCP server automatically, and `.kiro/agents/aws-calculator.json` provides a ready-to-use agent.
-
-3. Switch to the agent in chat:
-
+MCP config:
+```json
+{
+  "mcpServers": {
+    "aws-calculator": {
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "aws-calculator-mcp"]
+    }
+  }
+}
 ```
-/agent aws-calculator
-```
 
-The `skills/aws-calculator-estimates/SKILL.md` skill is loaded on demand — Kiro will reference it automatically when building estimates.
-
----
-
-### Local install (recommended for first use)
-
-1. Install the server dependencies:
+### Option 2: Node.js (if Docker is unavailable)
 
 ```bash
-cd aws-calc-assistant/server && npm install
+cd server && npm install
 ```
 
-2. Add the MCP server to your Claude Code settings. Run this in Claude Code:
-
-```
-/mcp add aws-calculator -- node /full/path/to/aws-calc-assistant/server/index.js
-```
-
-Or manually create a `.mcp.json` file in your project root (or `~/.claude/.mcp.json` for global):
-
+MCP config:
 ```json
 {
   "mcpServers": {
@@ -61,7 +50,39 @@ Or manually create a `.mcp.json` file in your project root (or `~/.claude/.mcp.j
 }
 ```
 
-3. Restart Claude Code or run `/mcp` to verify the server is connected.
+---
+
+### Kiro
+
+After cloning and completing either option above:
+
+1. Open the project in Kiro. `.kiro/settings/mcp.json` registers the MCP server automatically (Docker by default — edit it to use Node.js if needed), and `.kiro/agents/aws-calculator.json` provides a ready-to-use agent.
+
+2. Switch to the agent in chat:
+
+```
+/agent aws-calculator
+```
+
+The `skills/aws-calculator-estimates/SKILL.md` skill is loaded on demand — Kiro will reference it automatically when building estimates.
+
+---
+
+### Claude Code
+
+Add the MCP server to your Claude Code settings:
+
+```
+/mcp add aws-calculator -- docker run --rm -i aws-calculator-mcp
+```
+
+Or with Node.js:
+
+```
+/mcp add aws-calculator -- node /full/path/to/aws-calc-assistant/server/index.js
+```
+
+Restart Claude Code or run `/mcp` to verify the server is connected.
 
 ### As a distributable Claude Code plugin
 
