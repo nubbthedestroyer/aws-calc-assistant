@@ -722,9 +722,11 @@ server.tool(
     const lines = [
       `Found ${matches.length} service(s) matching "${query}":`,
       "",
-      ...matches.map((s) => `  ${s.name.padEnd(45)} serviceCode: ${s.serviceCode}`),
+      "| Service | serviceCode |",
+      "|---------|-------------|",
+      ...matches.map((s) => `| ${s.name} | \`${s.serviceCode}\` |`),
       "",
-      "Use serviceCode with get_service_schema or configure_service.",
+      "Use serviceCode with `get_service_schema` or `configure_service`.",
     ];
     return { content: [{ type: "text", text: lines.join("\n") }] };
   }
@@ -802,17 +804,32 @@ Returns calculated costs and formatted calculationComponents ready for create_es
     const cc = buildCalcComponents(allInputs, inputs);
     const result = await calculateServiceCost(serviceCode, region, inputs, activeTemplateId);
 
+    const monthly = result?.monthly ?? 0;
+    const upfront = result?.upfront ?? 0;
     const response = {
       serviceName: def.serviceName, serviceCode: def.serviceCode, region,
-      monthlyCost: result?.monthly ?? 0, upfrontCost: result?.upfront ?? 0,
-      annualCost: ((result?.monthly ?? 0) * 12 + (result?.upfront ?? 0)),
+      monthlyCost: monthly, upfrontCost: upfront,
+      annualCost: monthly * 12 + upfront,
       calculationComponents: result?.calculationComponents || cc,
-      summary: `${def.serviceName} in ${REGION_NAMES[region] || region}: $${(result?.monthly ?? 0).toFixed(2)}/mo | $${((result?.monthly ?? 0) * 12).toFixed(2)}/yr`,
     };
     if (activeTemplateId) response.templateId = activeTemplateId;
-    if ((result?.monthly ?? 0) === 0) response.warning = "Pricing engine returned $0. This service may require a manual monthlyCost override (see Known Limitations).";
 
-    return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+    const lines = [
+      `## ${def.serviceName}`,
+      "",
+      "| | |",
+      "|---|---|",
+      `| **Region** | ${REGION_NAMES[region] || region} |`,
+      `| **Monthly** | $${monthly.toFixed(2)} |`,
+      `| **Annual** | $${(monthly * 12).toFixed(2)} |`,
+      `| **Upfront** | $${upfront.toFixed(2)} |`,
+      `| **serviceCode** | \`${def.serviceCode}\` |`,
+    ];
+    if (activeTemplateId) lines.push(`| **templateId** | \`${activeTemplateId}\` |`);
+    if (monthly === 0) lines.push("", "> ⚠️ Pricing engine returned $0. This service may require a manual `monthlyCost` override (see Known Limitations).");
+    lines.push("", "```json", JSON.stringify({ calculationComponents: response.calculationComponents }, null, 2), "```");
+
+    return { content: [{ type: "text", text: lines.join("\n") }] };
   }
 );
 
@@ -962,19 +979,29 @@ Provide calculationComponents for editable estimates. Use 'group' to organize se
 
     const url = `https://calculator.aws/#/estimate?id=${body.savedKey}`;
     const output = [
-      `Estimate "${name}" saved.`, `Link: ${url}`,
-      `Monthly: $${totalMonthly.toFixed(2)} | Upfront: $${totalUpfront.toFixed(2)} | 12-month: $${(totalMonthly * 12 + totalUpfront).toFixed(2)}`,
-      `Services: ${services.length}`,
+      `## ${name}`,
+      "",
+      `**Link:** ${url}`,
+      "",
+      "| | |",
+      "|---|---|",
+      `| **Monthly** | $${totalMonthly.toFixed(2)} |`,
+      `| **12-month** | $${(totalMonthly * 12 + totalUpfront).toFixed(2)} |`,
+      `| **Upfront** | $${totalUpfront.toFixed(2)} |`,
+      `| **Services** | ${services.length} |`,
     ];
+
     if (Object.keys(groupsObj).length > 0) {
-      const listGroups = (nodes, prefix = "") => {
-        const lines = [];
-        for (const g of Object.values(nodes)) { lines.push(`${prefix}${g.name} ($${g.groupSubtotal.monthly.toFixed(2)}/mo)`); lines.push(...listGroups(g.groups || {}, prefix + "  ")); }
-        return lines;
+      output.push("", "### Groups", "", "| Group | Monthly |", "|-------|---------|");
+      const addGroups = (nodes, prefix = "") => {
+        for (const g of Object.values(nodes)) {
+          output.push(`| ${prefix}${g.name} | $${g.groupSubtotal.monthly.toFixed(2)} |`);
+          addGroups(g.groups || {}, prefix + "&nbsp;&nbsp;");
+        }
       };
-      output.push("", "Groups:", ...listGroups(groupsObj, "  "));
+      addGroups(groupsObj);
     }
-    if (warnings.length > 0) output.push("", ...warnings);
+    if (warnings.length > 0) output.push("", "> ⚠️ " + warnings.join("\n> ⚠️ "));
 
     return { content: [{ type: "text", text: output.join("\n") }] };
   }
@@ -1004,34 +1031,40 @@ server.tool(
     const monthly = data.totalCost?.monthly || 0;
     const upfront = data.totalCost?.upfront || 0;
 
-    const listGroups = (nodes, prefix = "") => {
-      const lines = [];
-      for (const g of Object.values(nodes || {})) {
-        lines.push(`${prefix}${g.name}: $${(g.groupSubtotal?.monthly || 0).toFixed(2)}/mo`);
-        lines.push(...listGroups(g.groups || {}, prefix + "  "));
-        for (const s of Object.values(g.services || {})) {
-          lines.push(`${prefix}  - ${s.serviceName} (${s.region}): $${(s.serviceCost?.monthly || 0).toFixed(2)}/mo`);
-        }
-      }
-      return lines;
-    };
-
-    const summary = [
-      `Estimate: ${data.name}`,
-      `Monthly: $${monthly.toFixed(2)} | Annual: $${(monthly * 12 + upfront).toFixed(2)} | Upfront: $${upfront.toFixed(2)}`,
-      `Created: ${data.metaData?.createdOn}`,
+    const output = [
+      `## ${data.name}`,
+      "",
+      "| | |",
+      "|---|---|",
+      `| **Monthly** | $${monthly.toFixed(2)} |`,
+      `| **Annual** | $${(monthly * 12 + upfront).toFixed(2)} |`,
+      `| **Upfront** | $${upfront.toFixed(2)} |`,
+      `| **Created** | ${data.metaData?.createdOn} |`,
     ];
 
-    const groupLines = listGroups(data.groups || {});
-    if (groupLines.length > 0) { summary.push("", "Groups:"); summary.push(...groupLines); }
+    const addGroups = (nodes, prefix = "") => {
+      for (const g of Object.values(nodes || {})) {
+        output.push(`| ${prefix}**${g.name}** | **$${(g.groupSubtotal?.monthly || 0).toFixed(2)}/mo** |`);
+        addGroups(g.groups || {}, prefix + "&nbsp;&nbsp;");
+        for (const s of Object.values(g.services || {})) {
+          output.push(`| ${prefix}&nbsp;&nbsp;${s.serviceName} (${s.region}) | $${(s.serviceCost?.monthly || 0).toFixed(2)}/mo |`);
+        }
+      }
+    };
 
+    const hasGroups = Object.keys(data.groups || {}).length > 0;
     const topSvcs = Object.values(data.services || {});
+
+    if (hasGroups) {
+      output.push("", "### Groups", "", "| Service | Monthly |", "|---------|---------|");
+      addGroups(data.groups);
+    }
     if (topSvcs.length > 0) {
-      summary.push("", "Services (ungrouped):");
-      for (const s of topSvcs) summary.push(`  - ${s.serviceName} (${s.region}): $${(s.serviceCost?.monthly || 0).toFixed(2)}/mo`);
+      output.push("", "### Services", "", "| Service | Region | Monthly |", "|---------|--------|---------|");
+      for (const s of topSvcs) output.push(`| ${s.serviceName} | ${s.region} | $${(s.serviceCost?.monthly || 0).toFixed(2)} |`);
     }
 
-    return { content: [{ type: "text", text: summary.join("\n") }] };
+    return { content: [{ type: "text", text: output.join("\n") }] };
   }
 );
 
