@@ -1,3 +1,8 @@
+---
+name: map-estimate-best-practices
+description: Structure AWS Calculator estimates for MAP (Migration Acceleration Program) funding requests. Use when building MAP estimates, structuring environment groups, or calculating ARR thresholds.
+---
+
 # MAP Estimate Best Practices
 
 The primary purpose of AWS Calculator estimates in this context is to support **AWS MAP (Migration Acceleration Program) funding requests**. MAP credits are 15–25% of projected first-year AWS run-rate for eligible migrated workloads. A well-structured estimate is a key artifact in the Assess phase business case.

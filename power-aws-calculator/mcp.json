@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "aws-calculator": {
-      "command": "docker",
-      "args": ["run", "--rm", "-i", "aws-calculator-mcp"]
-    }
-  }
-}

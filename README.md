@@ -1,135 +1,137 @@
-# AWS Calculator Assistant
+# AWS Calculator Power
 
-A Multi-Agent compatible plugin for building shareable [AWS Pricing Calculator](https://calculator.aws/) estimates programmatically.
+Build shareable [AWS Pricing Calculator](https://calculator.aws/) estimates programmatically via MCP tools. Designed for creating MAP (Migration Acceleration Program) funding estimates from customer infrastructure descriptions.
 
-## What it does
+Works with both **Kiro** (as a Power) and **Claude Code** (as a project with MCP + skills).
 
-- Searches 400+ AWS services and retrieves their configuration schemas
-- Configures services with real-time pricing from AWS APIs
-- Creates shareable, editable calculator.aws estimate links
-- Supports grouped/nested service organization (e.g., Production, DR, Dev)
-- Loads and inspects existing estimates
+## Prerequisites
 
-## Quick Start
+- **Node.js >= 18** (check with `node --version`)
 
-The fastest way to use this tool is to point your AI agent directly at this repo and describe what you need:
+## Install for Kiro
 
-1. Clone the repo and open it in Kiro (or add the MCP server to Claude Code — see Installation below)
-2. Give your agent context and ask it to build the estimate:
+### Global Power (use from any workspace)
 
-```
-Use this repo to build an AWS MAP estimate. Here are the customer's call notes and
-infrastructure details: [paste notes, discovery questionnaire, architecture diagram, etc.]
-```
-
-The agent will set up the MCP server, search for the right AWS services, configure pricing,
-and return a shareable calculator.aws link — no manual setup required.
-
----
-
-## Installation
-
-The MCP server can run via Docker (recommended — no Node.js required) or directly with Node.js.
-
-### Windows
-
-Run the setup script — it auto-detects Docker or Node.js and configures Kiro automatically:
-
-```powershell
-.\setup.ps1
-```
-
-### Option 1: Docker (recommended)
+Clone into your Kiro powers directory:
 
 ```bash
-docker build -t aws-calculator-mcp .
+git clone https://github.com/desktopninjas/aws-calc-assistant.git ~/.kiro/powers/aws-calc-assistant
 ```
 
-MCP config:
-```json
-{
-  "mcpServers": {
-    "aws-calculator": {
-      "command": "docker",
-      "args": ["run", "--rm", "-i", "aws-calculator-mcp"]
-    }
-  }
-}
-```
+Add the MCP server to your global Kiro config. Open `~/.kiro/settings/mcp.json` and add `aws-calculator` to the `mcpServers` object:
 
-### Option 2: Node.js (if Docker is unavailable)
-
-```bash
-cd server && npm install
-```
-
-MCP config:
 ```json
 {
   "mcpServers": {
     "aws-calculator": {
       "command": "node",
-      "args": ["/full/path/to/aws-calc-assistant/server/index.js"]
+      "args": ["~/.kiro/powers/aws-calc-assistant/dist/server.mjs"]
     }
   }
 }
 ```
 
----
+Restart Kiro or reconnect MCP servers from the MCP Server view.
+
+### Workspace Power (use in one project only)
+
+Clone the repo anywhere and open it in Kiro. The `mcp.json` at the repo root will auto-register the server for that workspace.
+
+## Install for Claude Code
+
+### Option A: Project scope (auto-discovered)
+
+Clone the repo and open it with Claude Code:
+
+```bash
+git clone https://github.com/desktopninjas/aws-calc-assistant.git
+cd aws-calc-assistant
+claude
+```
+
+Claude Code automatically discovers `.mcp.json` and loads the MCP server. The `CLAUDE.md` provides project context and `.claude/skills/aws-calculator/SKILL.md` activates on relevant tasks.
+
+### Option B: Global scope (use from anywhere)
+
+Clone to a permanent location:
+
+```bash
+git clone https://github.com/desktopninjas/aws-calc-assistant.git ~/tools/aws-calc-assistant
+```
+
+Register the MCP server globally:
+
+```bash
+claude mcp add aws-calculator --scope user -- node ~/tools/aws-calc-assistant/dist/server.mjs
+```
+
+Optionally, copy the skill for global availability:
+
+```bash
+mkdir -p ~/.claude/skills/aws-calculator
+cp ~/tools/aws-calc-assistant/.claude/skills/aws-calculator/SKILL.md ~/.claude/skills/aws-calculator/
+```
+
+## Verify Installation
+
+From the install directory (or anywhere if installed globally), test that the server responds:
+
+```bash
+echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0.0"}}}' | node ~/.kiro/powers/aws-calc-assistant/dist/server.mjs
+```
+
+You should see a JSON response containing `"name":"aws-calculator-assistant"`.
+
+## Update
+
+```bash
+cd ~/.kiro/powers/aws-calc-assistant && git pull
+```
+
+Or wherever you cloned the repo. No rebuild needed — `dist/server.mjs` is pre-built and committed.
+
+## Uninstall
 
 ### Kiro
 
-After cloning and completing either option above:
-
-1. Open the project in Kiro. `.kiro/settings/mcp.json` registers the MCP server automatically (Docker by default — edit it to use Node.js if needed), and `.kiro/agents/aws-calculator.json` provides a ready-to-use agent.
-
-2. Switch to the agent in chat:
-
-```
-/agent aws-calculator
+```bash
+rm -rf ~/.kiro/powers/aws-calc-assistant
 ```
 
-The `skills/aws-calculator-estimates/SKILL.md` skill is loaded on demand — Kiro will reference it automatically when building estimates.
-
----
+Then remove the `aws-calculator` entry from `~/.kiro/settings/mcp.json`.
 
 ### Claude Code
 
-Add the MCP server to your Claude Code settings:
-
-```
-/mcp add aws-calculator -- docker run --rm -i aws-calculator-mcp
-```
-
-Or with Node.js:
-
-```
-/mcp add aws-calculator -- node /full/path/to/aws-calc-assistant/server/index.js
+```bash
+claude mcp remove aws-calculator
+rm -rf ~/tools/aws-calc-assistant
+rm -rf ~/.claude/skills/aws-calculator
 ```
 
-Restart Claude Code or run `/mcp` to verify the server is connected.
+## Alternative: Docker
 
-### As a distributable Claude Code plugin
-
-Once published to a GitHub repo, users can install with:
+If you prefer Docker over running Node.js directly:
 
 ```bash
-/plugin marketplace add <your-org>/aws-calc-assistant
-/plugin install aws-calc-assistant@<your-marketplace>
-/reload-plugins
+cd ~/.kiro/powers/aws-calc-assistant  # or wherever you cloned
+docker build -t aws-calculator-mcp .
+```
+
+Then use this MCP config instead:
+
+```json
+{
+  "aws-calculator": {
+    "command": "docker",
+    "args": ["run", "--rm", "-i", "aws-calculator-mcp"]
+  }
+}
 ```
 
 ## Usage
 
-### Slash command (Claude Code)
+Once installed, ask your AI agent to build estimates:
 
-```
-/aws-calc-assistant:estimate 3 m6i.4xlarge EC2 instances with 500GB gp3 in us-east-1
-```
-
-### Example queries
-
-**Build a MAP estimate for a 3-tier web app:**
 ```
 Create an AWS MAP estimate for Acme Corp with:
 - Production: 4x m6i.2xlarge EC2 (Linux), RDS PostgreSQL db.r6g.2xlarge Multi-AZ 500GB
@@ -138,110 +140,41 @@ Create an AWS MAP estimate for Acme Corp with:
 Region: us-east-1
 ```
 
-**Look up a service:**
-```
-Search for RDS services
-```
+In Claude Code, you can also use the slash command:
 
-**Load an existing estimate:**
 ```
-Load estimate https://calculator.aws/#/estimate?id=abc123
+/estimate 3 m6i.4xlarge EC2 instances with 500GB gp3 in us-east-1
 ```
 
-### Example tool outputs
+## MCP Tools
 
-**search_services("RDS")**
-```
-Found 8 service(s) matching "RDS":
+| Tool | Purpose |
+|------|---------|
+| `search_services` | Find AWS service codes by keyword |
+| `get_service_schema` | Get input field IDs and options for a service |
+| `configure_service` | Configure a service → returns cost + calculation components |
+| `create_estimate` | Combine services into a shareable calculator.aws link |
+| `load_estimate` | Load and inspect an existing estimate |
 
-  Amazon RDS for MySQL                          serviceCode: amazonRDSMySQL
-  Amazon RDS for PostgreSQL                     serviceCode: amazonRDSPostgreSQLDB
-  Amazon RDS for SQL Server                     serviceCode: amazonRDSForSQLServer
-  Amazon RDS for Oracle                         serviceCode: amazonRDSForOracle
-  ...
+## Development
 
-Use serviceCode with get_service_schema or configure_service.
-```
+To modify the server and rebuild:
 
-**configure_service("eC2Next", { instanceType: "m6i.2xlarge", quantity: 4, ... })**
-```json
-{
-  "serviceName": "Amazon EC2",
-  "serviceCode": "eC2Next",
-  "region": "us-east-1",
-  "monthlyCost": 560.64,
-  "upfrontCost": 0,
-  "annualCost": 6727.68,
-  "summary": "Amazon EC2 in US East (N. Virginia): $560.64/mo | $6,727.68/yr",
-  "templateId": "quickEstimate",
-  "calculationComponents": { ... }
-}
+```bash
+cd server && npm install
+# Edit server/index.js
+npm test                  # Run tests (20 unit tests)
+cd .. && ./build.sh       # Rebuild dist/server.mjs
 ```
 
-**create_estimate(...)**
-```
-Estimate "Acme Corp - AWS MAP Estimate - 2026-06" saved.
-Link: https://calculator.aws/#/estimate?id=5ec6ae5fb817...
-Monthly: $2,847.50 | Upfront: $0.00 | 12-month: $34,170.00
-Services: 6
+The bundled `dist/server.mjs` is committed to the repo. After rebuilding, commit it so consumers get the update on `git pull`.
 
-Groups:
-  Production ($1,842.30/mo)
-  Disaster Recovery ($805.20/mo)
-  Shared Services ($200.00/mo)
+### Drift Detection
+
+The Claude Code skill (`.claude/skills/aws-calculator/SKILL.md`) is a symlink to `steering/aws-calculator-workflow.md`. This ensures both platforms always use identical instructions. Run `make verify` to confirm no drift:
+
+```bash
+make verify
 ```
 
-**load_estimate("https://calculator.aws/#/estimate?id=...")**
-```
-Estimate: Acme Corp - AWS MAP Estimate - 2026-06
-Monthly: $2,847.50 | Annual: $34,170.00 | Upfront: $0.00
-Created: 2026-06-01T14:23:11.000Z
-
-Groups:
-  Production: $1,842.30/mo
-    - Amazon EC2 (us-east-1): $560.64/mo
-    - Amazon RDS for PostgreSQL (us-east-1): $1,281.66/mo
-  Disaster Recovery: $805.20/mo
-    - Amazon EC2 (us-east-1): $280.32/mo
-    - Amazon RDS for PostgreSQL (us-east-1): $524.88/mo
-  Shared Services: $200.00/mo
-    - Amazon CloudWatch (us-east-1): $200.00/mo
-```
-
-### Via MCP tools
-
-The plugin provides 5 MCP tools: `search_services`, `get_service_schema`, `configure_service`, `create_estimate`, and `load_estimate`.
-
-### Programmatic (scripts)
-
-```javascript
-import { createMCPClient, configureService, buildServiceEntry, buildGroupedPayload, saveEstimate }
-  from './skills/aws-calculator-estimates/mcp-client-template.mjs';
-
-const client = createMCPClient('/path/to/server/index.js');
-await client.init();
-
-const { entry } = await buildServiceEntry(client, 'eC2Next', {
-  instanceType: 'm6i.4xlarge', selectedOS: 'linux', quantity: 4,
-  pricingStrategy: { model: 'ondemand' }, storageAmount: { value: 500, unit: 'GB' },
-}, 'Prod App Servers', 'Linux, m6i.4xlarge, 4 inst, 500GB gp3', 'quickEstimate');
-
-const payload = buildGroupedPayload('My Estimate', {
-  PRODUCTION: { services: { [`svc-${crypto.randomUUID()}`]: entry } },
-});
-
-const url = await saveEstimate(payload);
-console.log(url);
-client.close();
-```
-
-## Known limitations
-
-- Some services (S3, Fargate, EMR, Transit Gateway, AWS Backup) return $0 from the pricing engine. Include them with manual `monthlyCost` overrides.
-- EC2 `m6i.18xlarge` and `m7i.18xlarge` return $0 — use 16xlarge or 24xlarge instead.
-- Estimates expire after 1 year on calculator.aws.
-- These are undocumented AWS APIs that could change without notice.
-
-## License
-
-MIT
+This checks that the symlink is valid, frontmatter is present, MCP configs match, and the server responds.

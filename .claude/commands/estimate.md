@@ -3,11 +3,11 @@ description: Build an AWS Pricing Calculator estimate from a description of infr
 argument-hint: describe the infrastructure to estimate
 ---
 
-Use the AWS Calculator Assistant skill and MCP tools to build an AWS Pricing Calculator estimate based on `$ARGUMENTS`. The goal is a MAP-ready estimate suitable for an AWS Migration Acceleration Program funding request.
+Use the AWS Calculator MCP tools to build an AWS Pricing Calculator estimate based on `$ARGUMENTS`. The goal is a MAP-ready estimate suitable for an AWS Migration Acceleration Program funding request.
 
 Behavior:
 
-1. Parse the user's infrastructure description to identify AWS services, instance types, quantities, and regions.
+1. Parse the infrastructure description to identify AWS services, instance types, quantities, and regions.
 2. Use `configure_service` for each service to get real-time pricing and `calculationComponents`.
 3. Group services by environment using the standard MAP taxonomy: Production, Disaster Recovery, Pre-Production, Development, Shared Services.
 4. Use `create_estimate` to save and return a shareable calculator.aws link.

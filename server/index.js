@@ -40,6 +40,24 @@ const REGION_NAMES = {
 
 const SERVICE_REDIRECTS = { amazonS3: "amazonSimpleStorageServiceGroup" };
 
+// Some service schemas ship non-zero defaults for fields belonging to an *alternative*
+// configuration path the caller never asked for, and those defaults get silently priced
+// in alongside whatever the caller did configure. Verified against the real calculator.aws
+// UI (not just this server): NAT Gateway's schema defaults "Number of Regional NAT Gateways"
+// to 5 and "Number of AZs" to 3 even when you're configuring a plain (non-regional) gateway,
+// adding a phantom ~$492.75/mo (5 x 3 x $0.045/hr x 730) on top of the real config. Zero
+// these out unless the caller explicitly sets them.
+const FIELD_DEFAULT_OVERRIDES = {
+  networkAddressTranslationNatGatewayVpc: { regionalNatGatewayCount: 0, regionalNatGatewayAzCount: 0 },
+};
+
+function applyFieldDefaultOverrides(serviceCode, inputs) {
+  const overrides = FIELD_DEFAULT_OVERRIDES[serviceCode];
+  if (!overrides) return inputs;
+  const merged = { ...overrides, ...inputs };
+  return merged;
+}
+
 const FILE_SIZE_TO_GB = { KB: 1 / (1024 * 1024), MB: 1 / 1024, GB: 1, TB: 1024 };
 const FREQ_TO_MONTH = {
   "per second": 2592000, "per minute": 43200, "per hour": 720, "per day": 30,
@@ -51,6 +69,9 @@ const FREQ_TO_MONTH = {
   thousandPerDay: 1e3 * 30, millionPerHour: 1e6 * 720, thousandPerHour: 1e3 * 720,
 };
 const DURATION_TO_HOURS = { sec: 1 / 3600, min: 1 / 60, hr: 1, day: 24, week: 168, month: 730 };
+// Some service definitions spell duration units out in full (e.g. EBS's "hours") instead of
+// the abbreviated keys DURATION_TO_HOURS uses — map the common spellings onto those keys.
+const DURATION_UNIT_ALIASES = { hours: "hr", hour: "hr", minutes: "min", minute: "min", seconds: "sec", second: "sec", days: "day", weeks: "week", months: "month" };
 const THROUGHPUT_TO_MBPS = { kbps: 1 / 1024, mbps: 1, gbps: 1024 };
 
 // ─── Cache ───────────────────────────────────────────────────────────────────
@@ -140,9 +161,26 @@ function extractInputs(def, templateId) {
           } else if (field.unit) {
             field.defaultUnit = field.unit;
             field.format = `value in ${field.unit}`;
+          } else if (field.type === "fileSize" && comp.dropDownSize) {
+            // Some fileSize fields (e.g. Lambda's "Amount of memory allocated") carry their
+            // unit choices under dropDownSize/defaultOption instead of unitOptions/unit.
+            // Without this, the field is saved with no unit at all, which the calculator.aws
+            // web UI silently treats as unset and zeroes out that cost component on reload.
+            field.unitOptions = comp.dropDownSize.map((d) => ({ label: d.label, value: (d.label || d.id || "").toUpperCase() }));
+            const rawDefaultUnit = comp.defaultOption?.size || comp.dropDownSize[0]?.id || null;
+            field.defaultUnit = rawDefaultUnit ? rawDefaultUnit.toUpperCase() : null;
+            field.format = "value with unit selector";
           }
         }
-        if (field.type === "durationInput" && comp.defaultDuration) field.defaultUnit = comp.defaultDuration;
+        if (field.type === "durationInput") {
+          if (comp.defaultDuration) field.defaultUnit = comp.defaultDuration;
+          else if (comp.dropDownDuration) {
+            // Same gap as fileSize above, but for duration fields (e.g. EBS's "Average
+            // duration of volume"): units live under dropDownDuration/outputDurationUnit.
+            const rawUnit = comp.outputDurationUnit || comp.dropDownDuration[0]?.value || null;
+            field.defaultUnit = DURATION_UNIT_ALIASES[rawUnit] || rawUnit;
+          }
+        }
         if (field.type === "throughput" && comp.defaultThroughput) field.defaultUnit = comp.defaultThroughput;
         if (comp.subType === "pricingStrategy" && comp.radioGroups?.length > 0) {
           const defaultVal = {};
@@ -791,6 +829,10 @@ Returns calculated costs and formatted calculationComponents ready for create_es
     inputs: z.record(z.any()).default({}).describe("Input field values keyed by field ID from get_service_schema"),
   },
   async ({ serviceCode, region, templateId, inputs }) => {
+    if (region && !REGION_NAMES[region]) {
+      throw new Error(`Unknown region "${region}". Pricing would silently fall back to us-east-1 otherwise — pass one of: ${Object.keys(REGION_NAMES).join(", ")}`);
+    }
+    inputs = applyFieldDefaultOverrides(serviceCode, inputs);
     const def = await fetchJSON(API.serviceDef(serviceCode));
     let activeTemplateId = templateId || def.templates?.[0]?.id || null;
     let allInputs = extractInputs(def, activeTemplateId);
@@ -826,8 +868,12 @@ Returns calculated costs and formatted calculationComponents ready for create_es
       `| **serviceCode** | \`${def.serviceCode}\` |`,
     ];
     if (activeTemplateId) lines.push(`| **templateId** | \`${activeTemplateId}\` |`);
-    if (monthly === 0) lines.push("", "> ⚠️ Pricing engine returned $0. This service may require a manual `monthlyCost` override (see Known Limitations).");
-    lines.push("", "```json", JSON.stringify({ calculationComponents: response.calculationComponents }, null, 2), "```");
+    if (monthly === 0 && serviceCode === "eC2Next" && inputs.selectedOS && inputs.selectedOS !== "linux") {
+      lines.push("", `> ⚠️ EC2 pricing only resolves for \`selectedOS: "linux"\`. Windows/RHEL/SUSE/SQL-Server variants (including \`"${inputs.selectedOS}"\`) are not in the fetched price map and always return $0 — this is not a per-request fluke. Use a manual \`monthlyCost\` override with the real Windows/RHEL/SUSE on-demand rate.`);
+    } else if (monthly === 0) {
+      lines.push("", "> ⚠️ Pricing engine returned $0. This service may require a manual `monthlyCost` override (see Known Limitations).");
+    }
+    lines.push("", "```json", JSON.stringify(response, null, 2), "```");
 
     return { content: [{ type: "text", text: lines.join("\n") }] };
   }
@@ -860,6 +906,10 @@ Provide calculationComponents for editable estimates. Use 'group' to organize se
     let totalMonthly = 0, totalUpfront = 0;
 
     for (const svc of services) {
+      if (svc.region && !REGION_NAMES[svc.region]) {
+        throw new Error(`Unknown region "${svc.region}" for service ${svc.serviceCode}. Pricing would silently fall back to us-east-1 otherwise — pass one of: ${Object.keys(REGION_NAMES).join(", ")}`);
+      }
+      svc.calculationComponents = applyFieldDefaultOverrides(svc.serviceCode, svc.calculationComponents || {});
       const key = `${svc.serviceCode}-${crypto.randomUUID()}`;
       let cc = {};
       let serviceCode = svc.serviceCode;
@@ -884,7 +934,7 @@ Provide calculationComponents for editable estimates. Use 'group' to organize se
           const match = templateHint && def.templates.find(t => t.id === templateHint);
           templateId = match ? match.id : def.templates[0].id || null;
         }
-        estimateFor = templateId || serviceCode;
+        estimateFor = svc.description || templateId || serviceCode;
         inputs = extractInputs(def, templateId);
         if (inputs.length === 0 && def.layout === "loader" && serviceCode !== svc.serviceCode) {
           try { inputs = extractInputs(await fetchJSON(API.serviceDef(serviceCode)), templateId); } catch {}
@@ -1078,7 +1128,14 @@ export {
 
 // ─── Start server when run directly ──────────────────────────────────────────
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+import { resolve } from "path";
+import { realpathSync } from "fs";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __argfile = realpathSync(resolve(process.argv[1]));
+const __thisfile = realpathSync(__filename);
+if (__argfile === __thisfile) {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }
