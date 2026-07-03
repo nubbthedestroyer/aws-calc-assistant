@@ -3,7 +3,7 @@ name: "aws-calculator"
 displayName: "AWS Pricing Calculator"
 description: "Build shareable AWS Pricing Calculator estimates programmatically — with real-time pricing, grouped environments, and MAP funding best practices"
 keywords: ["aws", "pricing", "calculator", "estimate", "cost", "map", "migration", "ec2", "rds", "infrastructure", "arr", "cloud migration"]
-author: "SoftServe"
+author: "Michael Lucas"
 ---
 
 # Onboarding
