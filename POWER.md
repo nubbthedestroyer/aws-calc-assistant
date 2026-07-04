@@ -1,7 +1,7 @@
 ---
 name: "aws-calculator"
 displayName: "AWS Pricing Calculator"
-description: "Build shareable AWS Pricing Calculator estimates programmatically — with real-time pricing, grouped environments, and MAP funding best practices"
+description: "Generate shareable calculator.aws estimate links by describing your infrastructure in plain language. Supports multi-environment layouts (Production, DR, Staging), real-time AWS pricing lookups, and MAP funding best practices. Example: 'Create a 3-environment estimate with EC2, RDS, and S3 in us-east-1' and get back an editable calculator.aws URL."
 keywords: ["aws", "pricing", "calculator", "estimate", "cost", "map", "migration", "ec2", "rds", "infrastructure", "arr", "cloud migration"]
 author: "Michael Lucas"
 ---
