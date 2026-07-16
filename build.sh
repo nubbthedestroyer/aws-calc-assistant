@@ -19,4 +19,13 @@ npx --prefix server esbuild server/index.js \
   --format=esm \
   --outfile=dist/server.mjs
 
+# Ensure shebang is present for npx execution
+if ! head -1 dist/server.mjs | grep -q '^#!/usr/bin/env node'; then
+  TEMP=$(mktemp)
+  echo '#!/usr/bin/env node' > "$TEMP"
+  cat dist/server.mjs >> "$TEMP"
+  mv "$TEMP" dist/server.mjs
+fi
+chmod +x dist/server.mjs
+
 echo "Built dist/server.mjs ($(wc -c < dist/server.mjs | tr -d ' ') bytes)"

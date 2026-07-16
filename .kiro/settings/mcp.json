@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "aws-calculator": {
-      "command": "docker",
-      "args": ["run", "--rm", "-i", "aws-calculator-mcp"]
+      "command": "npx",
+      "args": ["@desktopninjas/aws-calc-assistant@latest"]
     }
   }
 }

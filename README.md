@@ -8,24 +8,20 @@ Works with both **Kiro** (as a Power) and **Claude Code** (as a project with MCP
 
 - **Node.js >= 18** (check with `node --version`)
 
-## Install for Kiro
+## Install via npx (recommended)
 
-### Global Power (use from any workspace)
+The simplest way to use this server — no git clone or manual updates needed. Updates are automatic via `@latest`.
 
-Clone into your Kiro powers directory:
+### Kiro
 
-```bash
-git clone https://github.com/desktopninjas/aws-calc-assistant.git ~/.kiro/powers/aws-calc-assistant
-```
-
-Add the MCP server to your global Kiro config. Open `~/.kiro/settings/mcp.json` and add `aws-calculator` to the `mcpServers` object:
+Add to your global Kiro config at `~/.kiro/settings/mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "aws-calculator": {
-      "command": "node",
-      "args": ["~/.kiro/powers/aws-calc-assistant/dist/server.mjs"]
+      "command": "npx",
+      "args": ["@desktopninjas/aws-calc-assistant@latest"]
     }
   }
 }
@@ -33,15 +29,75 @@ Add the MCP server to your global Kiro config. Open `~/.kiro/settings/mcp.json` 
 
 Restart Kiro or reconnect MCP servers from the MCP Server view.
 
-### Workspace Power (use in one project only)
+### Claude Code
 
-Clone the repo anywhere and open it in Kiro. The `mcp.json` at the repo root will auto-register the server for that workspace.
+Register the MCP server globally:
 
-## Install for Claude Code
+```bash
+claude mcp add aws-calculator --scope user -- npx @desktopninjas/aws-calc-assistant@latest
+```
 
-### Option A: Project scope (auto-discovered)
+Or add to your project's `.mcp.json`:
 
-Clone the repo and open it with Claude Code:
+```json
+{
+  "mcpServers": {
+    "aws-calculator": {
+      "command": "npx",
+      "args": ["@desktopninjas/aws-calc-assistant@latest"]
+    }
+  }
+}
+```
+
+### Pin a specific version
+
+For stability in production environments, pin to a specific version:
+
+```json
+{
+  "mcpServers": {
+    "aws-calculator": {
+      "command": "npx",
+      "args": ["@desktopninjas/aws-calc-assistant@1.0.0"]
+    }
+  }
+}
+```
+
+## Install from source (alternative)
+
+If you want to develop or modify the server locally:
+
+```bash
+git clone https://github.com/desktopninjas/aws-calc-assistant.git
+cd aws-calc-assistant
+```
+
+Then use the local path in your MCP config:
+
+```json
+{
+  "mcpServers": {
+    "aws-calculator": {
+      "command": "node",
+      "args": ["/path/to/aws-calc-assistant/dist/server.mjs"]
+    }
+  }
+}
+```
+
+### Kiro Power (from source)
+
+Clone into your Kiro powers directory for automatic discovery:
+
+```bash
+git clone https://github.com/desktopninjas/aws-calc-assistant.git ~/.kiro/powers/aws-calc-assistant
+```
+
+### Claude Code (from source)
+
+Clone and open with Claude Code — it auto-discovers `.mcp.json`:
 
 ```bash
 git clone https://github.com/desktopninjas/aws-calc-assistant.git
@@ -49,50 +105,37 @@ cd aws-calc-assistant
 claude
 ```
 
-Claude Code automatically discovers `.mcp.json` and loads the MCP server. The `CLAUDE.md` provides project context and `.claude/skills/aws-calculator/SKILL.md` activates on relevant tasks.
-
-### Option B: Global scope (use from anywhere)
-
-Clone to a permanent location:
-
-```bash
-git clone https://github.com/desktopninjas/aws-calc-assistant.git ~/tools/aws-calc-assistant
-```
-
-Register the MCP server globally:
-
-```bash
-claude mcp add aws-calculator --scope user -- node ~/tools/aws-calc-assistant/dist/server.mjs
-```
-
-Optionally, copy the skill for global availability:
-
-```bash
-mkdir -p ~/.claude/skills/aws-calculator
-cp ~/tools/aws-calc-assistant/.claude/skills/aws-calculator/SKILL.md ~/.claude/skills/aws-calculator/
-```
-
 ## Verify Installation
 
-From the install directory (or anywhere if installed globally), test that the server responds:
+Test that the server responds:
 
 ```bash
-echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0.0"}}}' | node ~/.kiro/powers/aws-calc-assistant/dist/server.mjs
+echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0.0"}}}' | npx @desktopninjas/aws-calc-assistant@latest
 ```
 
 You should see a JSON response containing `"name":"aws-calculator-assistant"`.
 
 ## Update
 
+With npx, updates are automatic — `@latest` always fetches the newest version. To clear the npx cache:
+
+```bash
+npx clear-npx-cache
+```
+
+If installed from source:
+
 ```bash
 cd ~/.kiro/powers/aws-calc-assistant && git pull
 ```
 
-Or wherever you cloned the repo. No rebuild needed — `dist/server.mjs` is pre-built and committed.
-
 ## Uninstall
 
-### Kiro
+### npx
+
+Just remove the `aws-calculator` entry from your MCP config. No files to delete.
+
+### From source (Kiro)
 
 ```bash
 rm -rf ~/.kiro/powers/aws-calc-assistant
@@ -100,7 +143,7 @@ rm -rf ~/.kiro/powers/aws-calc-assistant
 
 Then remove the `aws-calculator` entry from `~/.kiro/settings/mcp.json`.
 
-### Claude Code
+### From source (Claude Code)
 
 ```bash
 claude mcp remove aws-calculator
@@ -113,11 +156,12 @@ rm -rf ~/.claude/skills/aws-calculator
 If you prefer Docker over running Node.js directly:
 
 ```bash
-cd ~/.kiro/powers/aws-calc-assistant  # or wherever you cloned
+git clone https://github.com/desktopninjas/aws-calc-assistant.git
+cd aws-calc-assistant
 docker build -t aws-calculator-mcp .
 ```
 
-Then use this MCP config instead:
+Then use this MCP config:
 
 ```json
 {
@@ -167,7 +211,12 @@ npm test                  # Run tests (20 unit tests)
 cd .. && ./build.sh       # Rebuild dist/server.mjs
 ```
 
-The bundled `dist/server.mjs` is committed to the repo. After rebuilding, commit it so consumers get the update on `git pull`.
+The bundled `dist/server.mjs` is committed to the repo. After rebuilding, commit and publish:
+
+```bash
+npm version patch         # bumps version in root package.json
+npm publish --access public
+```
 
 ### Drift Detection
 

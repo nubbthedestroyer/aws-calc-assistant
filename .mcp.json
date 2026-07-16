@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "aws-calculator": {
-      "command": "node",
-      "args": ["./dist/server.mjs"]
+      "command": "npx",
+      "args": ["@desktopninjas/aws-calc-assistant@latest"]
     }
   }
 }

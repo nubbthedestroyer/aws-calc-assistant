@@ -8,6 +8,21 @@ author: "Michael Lucas"
 
 # Onboarding
 
+## MCP Configuration
+
+The server runs via npx — no git clone or manual updates needed:
+
+```json
+{
+  "mcpServers": {
+    "aws-calculator": {
+      "command": "npx",
+      "args": ["@desktopninjas/aws-calc-assistant@latest"]
+    }
+  }
+}
+```
+
 ## Confirm MCP tools are available
 
 After installation, the following MCP tools should be available via the `aws-calculator` server:
@@ -23,7 +38,7 @@ After installation, the following MCP tools should be available via the `aws-cal
 ## Verify the server responds
 
 ```bash
-echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0.0"}}}' | node dist/server.mjs
+echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0.0"}}}' | npx @desktopninjas/aws-calc-assistant@latest
 ```
 
 You should see a JSON response containing `"name":"aws-calculator-assistant"`.

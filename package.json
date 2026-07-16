@@ -1,0 +1,39 @@
+{
+  "name": "@desktopninjas/aws-calc-assistant",
+  "version": "1.0.0",
+  "description": "MCP server for building shareable AWS Pricing Calculator estimates programmatically",
+  "type": "module",
+  "bin": {
+    "aws-calc-assistant": "dist/server.mjs"
+  },
+  "files": [
+    "dist/"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "aws",
+    "pricing",
+    "calculator",
+    "estimate",
+    "cost",
+    "mcp",
+    "model-context-protocol",
+    "map",
+    "migration",
+    "ec2",
+    "rds",
+    "infrastructure"
+  ],
+  "author": "Michael Lucas",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/desktopninjas/aws-calc-assistant.git"
+  },
+  "homepage": "https://github.com/desktopninjas/aws-calc-assistant#readme",
+  "bugs": {
+    "url": "https://github.com/desktopninjas/aws-calc-assistant/issues"
+  }
+}

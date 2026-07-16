@@ -54,15 +54,15 @@ check-frontmatter:
 		(echo "ERROR: steering/aws-calculator-workflow.md missing 'description' in frontmatter"; exit 1)
 	@echo "  ✓ Both steering files have valid YAML frontmatter"
 
-# Verify .mcp.json and mcp.json point to the same server path
+# Verify .mcp.json and mcp.json use the same command and args
 check-mcp-config:
 	@echo "Checking MCP configs..."
-	@KIRO_PATH=$$(python3 -c "import json; print(json.load(open('mcp.json'))['mcpServers']['aws-calculator']['args'][0])"); \
-	CLAUDE_PATH=$$(python3 -c "import json; print(json.load(open('.mcp.json'))['mcpServers']['aws-calculator']['args'][0])"); \
-	if [ "$$KIRO_PATH" = "$$CLAUDE_PATH" ]; then \
-		echo "  ✓ Both mcp.json and .mcp.json point to: $$KIRO_PATH"; \
+	@KIRO_CMD=$$(python3 -c "import json; c=json.load(open('mcp.json'))['mcpServers']['aws-calculator']; print(c['command'], *c['args'])"); \
+	CLAUDE_CMD=$$(python3 -c "import json; c=json.load(open('.mcp.json'))['mcpServers']['aws-calculator']; print(c['command'], *c['args'])"); \
+	if [ "$$KIRO_CMD" = "$$CLAUDE_CMD" ]; then \
+		echo "  ✓ Both mcp.json and .mcp.json use: $$KIRO_CMD"; \
 	else \
-		echo "ERROR: MCP configs diverge - Kiro: $$KIRO_PATH, Claude: $$CLAUDE_PATH"; \
+		echo "ERROR: MCP configs diverge - Kiro: $$KIRO_CMD, Claude: $$CLAUDE_CMD"; \
 		exit 1; \
 	fi
 

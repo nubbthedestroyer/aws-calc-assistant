@@ -1,0 +1,33 @@
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install server dependencies
+        run: cd server && npm ci
+
+      - name: Run tests
+        run: cd server && npm test
+
+      - name: Build
+        run: ./build.sh
+
+      - name: Publish
+        run: npm publish --access public
