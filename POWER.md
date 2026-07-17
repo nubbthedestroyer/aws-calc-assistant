@@ -49,7 +49,31 @@ You should see a JSON response containing `"name":"aws-calculator-assistant"`.
 - Structuring an estimate for AWS MAP funding → `map-estimate-best-practices.md`
 - Asking about environment naming, group structure, or ARR → `map-estimate-best-practices.md`
 - Configuring EC2, RDS, S3, or other specific services → `aws-calculator-workflow.md`
-- Quality-checking an estimate before delivery → `aws-calculator-workflow.md` (QA Checklist section)
+- Quality-checking an estimate before delivery → check private steering `field-quality-rules.md`
+
+# Private Steering (Extended Guidance)
+
+This power supports an optional private steering layer with MAP funding best practices, field quality rules, and QA checklists.
+
+## Automatic Setup
+
+If you have SSH access to the private repo, clone it alongside this power:
+
+```bash
+git clone git@github.com:nubbthedestroyer/aws-calc-steering-private.git ~/.kiro/powers/aws-calc-steering-private
+```
+
+The private steering files will then be available at:
+- `~/.kiro/powers/aws-calc-steering-private/steering/map-estimate-best-practices.md`
+- `~/.kiro/powers/aws-calc-steering-private/steering/field-quality-rules.md`
+
+## If You Don't Have Access
+
+The public power works without the private steering — you'll get the core workflow, service codes, and configuration patterns. For MAP-specific guidance (funding tiers, environment sizing, data transfer exclusion rules, QA checklists), request access to:
+
+**Repository:** `https://github.com/nubbthedestroyer/aws-calc-steering-private`
+
+Contact the repo owner or your team lead to request access.
 
 # Instructions
 
