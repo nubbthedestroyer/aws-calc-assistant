@@ -21,7 +21,7 @@ Add to your global Kiro config at `~/.kiro/settings/mcp.json`:
   "mcpServers": {
     "aws-calculator": {
       "command": "npx",
-      "args": ["@desktopninjas/aws-calc-assistant@latest"]
+      "args": ["@nubbthedestroyer/aws-calc-assistant@latest"]
     }
   }
 }
@@ -34,7 +34,7 @@ Restart Kiro or reconnect MCP servers from the MCP Server view.
 Register the MCP server globally:
 
 ```bash
-claude mcp add aws-calculator --scope user -- npx @desktopninjas/aws-calc-assistant@latest
+claude mcp add aws-calculator --scope user -- npx @nubbthedestroyer/aws-calc-assistant@latest
 ```
 
 Or add to your project's `.mcp.json`:
@@ -44,7 +44,7 @@ Or add to your project's `.mcp.json`:
   "mcpServers": {
     "aws-calculator": {
       "command": "npx",
-      "args": ["@desktopninjas/aws-calc-assistant@latest"]
+      "args": ["@nubbthedestroyer/aws-calc-assistant@latest"]
     }
   }
 }
@@ -59,7 +59,7 @@ For stability in production environments, pin to a specific version:
   "mcpServers": {
     "aws-calculator": {
       "command": "npx",
-      "args": ["@desktopninjas/aws-calc-assistant@1.0.0"]
+      "args": ["@nubbthedestroyer/aws-calc-assistant@1.0.0"]
     }
   }
 }
@@ -70,7 +70,7 @@ For stability in production environments, pin to a specific version:
 If you want to develop or modify the server locally:
 
 ```bash
-git clone https://github.com/desktopninjas/aws-calc-assistant.git
+git clone https://github.com/nubbthedestroyer/aws-calc-assistant.git
 cd aws-calc-assistant
 ```
 
@@ -92,7 +92,7 @@ Then use the local path in your MCP config:
 Clone into your Kiro powers directory for automatic discovery:
 
 ```bash
-git clone https://github.com/desktopninjas/aws-calc-assistant.git ~/.kiro/powers/aws-calc-assistant
+git clone https://github.com/nubbthedestroyer/aws-calc-assistant.git ~/.kiro/powers/aws-calc-assistant
 ```
 
 ### Claude Code (from source)
@@ -100,7 +100,7 @@ git clone https://github.com/desktopninjas/aws-calc-assistant.git ~/.kiro/powers
 Clone and open with Claude Code — it auto-discovers `.mcp.json`:
 
 ```bash
-git clone https://github.com/desktopninjas/aws-calc-assistant.git
+git clone https://github.com/nubbthedestroyer/aws-calc-assistant.git
 cd aws-calc-assistant
 claude
 ```
@@ -110,7 +110,7 @@ claude
 Test that the server responds:
 
 ```bash
-echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0.0"}}}' | npx @desktopninjas/aws-calc-assistant@latest
+echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0.0"}}}' | npx @nubbthedestroyer/aws-calc-assistant@latest
 ```
 
 You should see a JSON response containing `"name":"aws-calculator-assistant"`.
@@ -156,7 +156,7 @@ rm -rf ~/.claude/skills/aws-calculator
 If you prefer Docker over running Node.js directly:
 
 ```bash
-git clone https://github.com/desktopninjas/aws-calc-assistant.git
+git clone https://github.com/nubbthedestroyer/aws-calc-assistant.git
 cd aws-calc-assistant
 docker build -t aws-calculator-mcp .
 ```

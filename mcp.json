@@ -2,7 +2,7 @@
   "mcpServers": {
     "aws-calculator": {
       "command": "npx",
-      "args": ["@desktopninjas/aws-calc-assistant@latest"]
+      "args": ["@nubbthedestroyer/aws-calc-assistant@latest"]
     }
   }
 }
