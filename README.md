@@ -211,6 +211,10 @@ npm test                  # Run tests (20 unit tests)
 cd .. && ./build.sh       # Rebuild dist/server.mjs
 ```
 
+### Customer Scripts
+
+When building estimates for specific customers, generated `.mjs` scripts and output files go in `customer-scripts/`. This folder is gitignored to keep customer data out of the repo.
+
 The bundled `dist/server.mjs` is committed to the repo. After rebuilding, commit and publish:
 
 ```bash
