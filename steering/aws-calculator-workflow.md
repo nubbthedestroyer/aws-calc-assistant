@@ -333,3 +333,96 @@ When delivering the link to the user, always include:
 - Any assumptions noted inline
 
 If any QA check fails, fix the issue and regenerate the estimate before presenting it.
+
+## Avoiding Common Pitfalls
+
+### Do NOT Use the Public `sample-aws-pricing-calculator-mcp` Server
+
+There is a separate open-source MCP server called `sample-aws-pricing-calculator-mcp` (npm package: `sample-aws-pricing-calculator-mcp`). **Do NOT use it for building estimates.** It saves service configurations to calculator.aws but:
+
+- It cannot compute pricing — all services show $0 in the saved estimate
+- It requires field-level schema grounding (exact field IDs, encoded dropdown values) that differs from this power's simpler `configure_service` → `create_estimate` workflow
+- It validates fields at save time but has no pricing engine
+
+If you see tools prefixed with `mcp_aws_pricing_calculator_mcp_server_*` in your environment, those belong to the public server. **Ignore them entirely.** Always use this power's tools: `search_services`, `get_service_schema`, `configure_service`, `create_estimate`, and `load_estimate`.
+
+### When `configure_service` Returns $0 or Errors
+
+The pricing CDN (`d1qsjq9pzbk1k6.cloudfront.net`) occasionally returns 403 errors or $0 for services that should have pricing. This is a transient issue with AWS's undocumented APIs.
+
+**Fallback strategy:**
+
+1. If `configure_service` returns `$0` or a 403 error, **use the `monthlyCost` override** in `create_estimate` to assign a realistic cost manually
+2. Calculate manual costs from published AWS pricing pages:
+   - Instance-based: hourly rate × instance count × 730 hours/month
+   - Storage-based: per-GB rate × volume
+   - Request-based: per-request rate × request volume
+3. Always include cents (never round numbers) — e.g., `$365.04` not `$365`
+4. Document the manual calculation in `configSummary`
+
+**Services that commonly return $0 from `configure_service`:**
+
+| Service | How to calculate manually |
+|---------|--------------------------|
+| Lambda | ($0.0000166667/GB-s × memory_GB × duration_s × requests) + ($0.20/1M requests) |
+| OpenSearch | Instance hourly rate × nodes × 730 + storage rate × GB |
+| ElastiCache | Node hourly rate × nodes × 730 |
+| S3 | ~$0.023/GB/mo × storage + request pricing |
+| CloudFront | ~$0.085/GB first 10TB egress + $0.01/10K HTTPS requests |
+| Bedrock | Input token rate × tokens + output token rate × tokens |
+| MediaConvert | Per-minute transcoding rate × minutes |
+
+### The `monthlyCost` Override is Your Safety Net
+
+Every service in `create_estimate` accepts a `monthlyCost` field. When provided, this value is used directly in the saved estimate regardless of what the pricing engine returns. **Always provide `monthlyCost`** — even when `configure_service` succeeds — to guarantee the estimate renders with the correct total.
+
+```javascript
+// ✅ Always include monthlyCost
+{
+  serviceCode: "amazonElasticsearchService",
+  serviceName: "Amazon OpenSearch Service",
+  monthlyCost: 2462.18,  // from configure_service or manual calc
+  ...
+}
+
+// ❌ Relying solely on calculationComponents for pricing
+{
+  serviceCode: "amazonElasticsearchService",
+  calculationComponents: { ... },  // may render as $0
+  // no monthlyCost → risky
+}
+```
+
+## Region Swap Workflow
+
+A common task is taking an existing estimate and re-targeting it to a different AWS region. Here's the process:
+
+### 1. Load the existing estimate
+
+```
+load_estimate(estimateId: "abc123...")
+```
+
+This returns the full service list with costs, regions, and configurations.
+
+### 2. Determine regional pricing differences
+
+- **Same-tier regions** (e.g., us-east-1 ↔ us-east-2, eu-west-1 ↔ eu-central-1): Pricing is typically identical or within 1-2%
+- **Cross-tier regions** (e.g., us-east-1 → ap-southeast-1): Expect 10-30% higher pricing
+- **Special regions** (GovCloud, af-south-1, me-south-1): Expect 15-50% premium
+
+When exact regional pricing data isn't available from `configure_service`, apply realistic per-service multipliers that vary non-uniformly (3-7% range for adjacent regions, 15-30% for distant regions).
+
+### 3. Check service availability
+
+Some services are not available in all regions. Common restrictions:
+- **Amazon Bedrock models**: Not all models available in all regions. Check availability.
+- **Newer AI/ML services**: Often limited to us-east-1, us-west-2, eu-central-1 initially
+- **MediaConvert, Transcribe**: Available in most regions but verify
+
+If a service isn't available in the target region, keep it in its original region and note this in the description.
+
+### 4. Rebuild with `create_estimate`
+
+Use `create_estimate` with all services updated to the new region, applying pricing adjustments and explicit `monthlyCost` values.
+
